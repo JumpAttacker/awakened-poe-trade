@@ -1,4 +1,4 @@
-import { ItemInfluence, ItemCategory, HeistDepartment } from '@/parser'
+import { ItemInfluence, ItemCategory } from '@/parser'
 import { ItemFilters, StatFilter, INTERNAL_TRADE_IDS, InternalTradeId } from '../filters/interfaces'
 import { setProperty as propSet } from 'dot-prop'
 import { DateTime } from 'luxon'
@@ -52,18 +52,6 @@ export const CATEGORY_TO_TRADE_ID = new Map([
   [ItemCategory.Idol, 'idol'],
   [ItemCategory.Graft, 'graft']
 ])
-
-const DEPARTMENT_TO_HEIST_FILTER: Record<HeistDepartment, string> = {
-  [HeistDepartment.Agility]: 'heist_agility',
-  [HeistDepartment.BruteForce]: 'heist_brute_force',
-  [HeistDepartment.CounterThaumaturgy]: 'heist_counter_thaumaturgy',
-  [HeistDepartment.Deception]: 'heist_deception',
-  [HeistDepartment.Demolition]: 'heist_demolition',
-  [HeistDepartment.Engineering]: 'heist_engineering',
-  [HeistDepartment.Lockpicking]: 'heist_lockpicking',
-  [HeistDepartment.Perception]: 'heist_perception',
-  [HeistDepartment.TrapDisarmament]: 'heist_trap_disarmament'
-}
 
 const TOTAL_MODS_TEXT = {
   CRAFTED_MODIFIERS: [
@@ -188,6 +176,7 @@ interface TradeRequest {
           heist_max_escape_routes?: FilterRange
           heist_reward_rooms?: FilterRange
           heist_max_reward_rooms?: FilterRange
+          heist_objective_value?: { option?: 'priceless' }
           heist_agility?: FilterRange
           heist_brute_force?: FilterRange
           heist_counter_thaumaturgy?: FilterRange
@@ -441,13 +430,6 @@ export function createTradeRequest (filters: ItemFilters, stats: StatFilter[]) {
     propSet(query.filters, 'map_filters.filters.map_iir.min', filters.heistItemRarity.value)
   }
 
-  if (filters.heistContractDepartment && !filters.heistContractDepartment.disabled) {
-    const filterKey = DEPARTMENT_TO_HEIST_FILTER[filters.heistContractDepartment.value]
-    if (filterKey && filters.heistContractMinLevel && !filters.heistContractMinLevel.disabled) {
-      propSet(query.filters, `heist_filters.filters.${filterKey}.min`, filters.heistContractMinLevel.value)
-    }
-  }
-
   if (filters.ultimatum) {
     if (!filters.ultimatum.challenge.disabled) {
       propSet(query.filters, 'ultimatum_filters.filters.ultimatum_challenge.option', filters.ultimatum.challenge.value)
@@ -468,6 +450,8 @@ export function createTradeRequest (filters: ItemFilters, stats: StatFilter[]) {
   }
 
   for (const stat of stats) {
+    if (!stat.tradeId[0].startsWith('item.')) continue
+
     if (stat.tradeId[0] === 'item.has_empty_modifier') {
       const TARGET_ID = {
         CRAFTED_MODIFIERS: pseudoStatByRef(TOTAL_MODS_TEXT.CRAFTED_MODIFIERS[stat.option!.value])!.trade.ids[ModifierType.Pseudo][0],
@@ -560,12 +544,51 @@ export function createTradeRequest (filters: ItemFilters, stats: StatFilter[]) {
         propSet(query.filters, 'map_filters.filters.map_packsize.min', typeof input.min === 'number' ? input.min : undefined)
         propSet(query.filters, 'map_filters.filters.map_packsize.max', typeof input.max === 'number' ? input.max : undefined)
         break
+      case 'item.heist_job_agility':
+        propSet(query.filters, 'heist_filters.filters.heist_agility.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_agility.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_bruteforce':
+        propSet(query.filters, 'heist_filters.filters.heist_brute_force.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_brute_force.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_counterthaumaturgy':
+        propSet(query.filters, 'heist_filters.filters.heist_counter_thaumaturgy.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_counter_thaumaturgy.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_deception':
+        propSet(query.filters, 'heist_filters.filters.heist_deception.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_deception.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_demolition':
+        propSet(query.filters, 'heist_filters.filters.heist_demolition.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_demolition.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_engineering':
+        propSet(query.filters, 'heist_filters.filters.heist_engineering.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_engineering.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_lockpicking':
+        propSet(query.filters, 'heist_filters.filters.heist_lockpicking.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_lockpicking.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_perception':
+        propSet(query.filters, 'heist_filters.filters.heist_perception.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_perception.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_job_trapdisarmament':
+        propSet(query.filters, 'heist_filters.filters.heist_trap_disarmament.min', typeof input.min === 'number' ? input.min : 1)
+        propSet(query.filters, 'heist_filters.filters.heist_trap_disarmament.max', typeof input.max === 'number' ? input.max : undefined)
+        break
+      case 'item.heist_target_priceless':
+        propSet(query.filters, 'heist_filters.filters.heist_objective_value.option', 'priceless')
+        break
     }
   }
 
   type BareStatFilter = Omit<StatFilter, 'statRef' | 'text' | 'tag' | 'sources'>
   const realStats: BareStatFilter[] = stats.filter(stat =>
-    !INTERNAL_TRADE_IDS.includes(stat.tradeId[0] as any))
+    !INTERNAL_TRADE_IDS.includes(stat.tradeId[0]))
   if (filters.veiled) {
     for (const statRef of filters.veiled.statRefs) {
       const statOrGroup = STAT_BY_REF_V2(statRef)!

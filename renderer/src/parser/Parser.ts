@@ -1,7 +1,6 @@
 import { Result, ok, err } from 'neverthrow'
 import {
   CLIENT_STRINGS as _$,
-  CLIENT_STRINGS_REF as _$REF,
   ITEM_BY_TRANSLATED,
   ITEM_BY_REF,
   STAT_BY_MATCH_STR,
@@ -10,7 +9,7 @@ import {
 import { ModifierType, sumStatsByModType } from './modifiers'
 import { linesToStatStrings, tryParseTranslation, getRollOrMinmaxAvg } from './stat-translations'
 import { ItemCategory, ACCESSORY } from './meta'
-import { IncursionRoom, ParsedItem, ItemInfluence, ItemRarity, HeistDepartment } from './ParsedItem'
+import { IncursionRoom, ParsedItem, ItemInfluence, ItemRarity } from './ParsedItem'
 import { magicBasetype } from './magic-name'
 import { isModInfoLine, groupLinesByMod, parseModInfoLine, parseModType, ModifierInfo, ParsedModifier, ENCHANT_LINE, SCOURGE_LINE, IMPLICIT_LINE } from './advanced-mod-desc'
 import { calcPropPercentile, QUALITY_STATS } from './calc-q20'
@@ -55,8 +54,8 @@ const parsers: Array<ParserFn | { virtual: VirtualParserFn }> = [
   parseInfluence,
   parseMap,
   parseSockets,
-  parseHeistBlueprint,
   parseHeistContract,
+  parseHeistBlueprint,
   parseUltimatum,
   parseUltimatumMods,
   parseAreaLevel,
@@ -152,30 +151,30 @@ function normalizeName (item: ParserState) {
       item.rarity === ItemRarity.Rare
   ) {
     if (item.baseType) {
-      if (_$REF.MAP_BLIGHTED.test(item.baseType)) {
-        item.baseType = _$REF.MAP_BLIGHTED.exec(item.baseType)![1]
-      } else if (_$REF.MAP_BLIGHT_RAVAGED.test(item.baseType)) {
-        item.baseType = _$REF.MAP_BLIGHT_RAVAGED.exec(item.baseType)![1]
+      if (_$.MAP_BLIGHTED.test(item.baseType)) {
+        item.baseType = _$.MAP_BLIGHTED.exec(item.baseType)![1]
+      } else if (_$.MAP_BLIGHT_RAVAGED.test(item.baseType)) {
+        item.baseType = _$.MAP_BLIGHT_RAVAGED.exec(item.baseType)![1]
       }
     } else {
-      if (_$REF.MAP_BLIGHTED.test(item.name)) {
-        item.name = _$REF.MAP_BLIGHTED.exec(item.name)![1]
-      } else if (_$REF.MAP_BLIGHT_RAVAGED.test(item.name)) {
-        item.name = _$REF.MAP_BLIGHT_RAVAGED.exec(item.name)![1]
+      if (_$.MAP_BLIGHTED.test(item.name)) {
+        item.name = _$.MAP_BLIGHTED.exec(item.name)![1]
+      } else if (_$.MAP_BLIGHT_RAVAGED.test(item.name)) {
+        item.name = _$.MAP_BLIGHT_RAVAGED.exec(item.name)![1]
       }
     }
   }
 
   if (item.category === ItemCategory.MetamorphSample) {
-    if (_$REF.METAMORPH_BRAIN.test(item.name)) {
+    if (_$.METAMORPH_BRAIN.test(item.name)) {
       item.name = 'Metamorph Brain'
-    } else if (_$REF.METAMORPH_EYE.test(item.name)) {
+    } else if (_$.METAMORPH_EYE.test(item.name)) {
       item.name = 'Metamorph Eye'
-    } else if (_$REF.METAMORPH_LUNG.test(item.name)) {
+    } else if (_$.METAMORPH_LUNG.test(item.name)) {
       item.name = 'Metamorph Lung'
-    } else if (_$REF.METAMORPH_HEART.test(item.name)) {
+    } else if (_$.METAMORPH_HEART.test(item.name)) {
       item.name = 'Metamorph Heart'
-    } else if (_$REF.METAMORPH_LIVER.test(item.name)) {
+    } else if (_$.METAMORPH_LIVER.test(item.name)) {
       item.name = 'Metamorph Liver'
     }
   }
@@ -184,25 +183,29 @@ function normalizeName (item: ParserState) {
 function findInDatabase (item: ParserState) {
   let info: BaseType[] | undefined
   if (item.category === ItemCategory.DivinationCard) {
-    info = ITEM_BY_REF('DIVINATION_CARD', item.name)
+    info = ITEM_BY_TRANSLATED('DIVINATION_CARD', item.name)
   } else if (item.category === ItemCategory.CapturedBeast) {
-    info = ITEM_BY_REF('CAPTURED_BEAST', item.baseType ?? item.name)
+    info = ITEM_BY_TRANSLATED('CAPTURED_BEAST', item.baseType ?? item.name)
   } else if (item.category === ItemCategory.Gem) {
-    info = ITEM_BY_REF('GEM', item.name)
+    info = ITEM_BY_TRANSLATED('GEM', item.name)
   } else if (item.category === ItemCategory.MetamorphSample) {
-    info = ITEM_BY_REF('ITEM', item.name)
+    info = ITEM_BY_TRANSLATED('ITEM', item.name)
   } else if (item.category === ItemCategory.Voidstone) {
     info = ITEM_BY_REF('ITEM', 'Charged Compass')
   } else if (item.rarity === ItemRarity.Unique && !item.isUnidentified) {
-    info = ITEM_BY_REF('UNIQUE', item.name)
+    info = ITEM_BY_TRANSLATED('UNIQUE', item.name)
   } else {
-    info = ITEM_BY_REF('ITEM', item.baseType ?? item.name)
+    info = ITEM_BY_TRANSLATED('ITEM', item.baseType ?? item.name)
   }
   if (!info?.length) {
     return err('item.unknown')
   }
   if (info[0].unique) {
-    info = info.filter(info => info.unique!.base === item.baseType)
+    const baseTypes = ITEM_BY_TRANSLATED('ITEM', item.baseType!)
+    if (!baseTypes?.length) return err('item.unknown')
+
+    const baseTypeRef = baseTypes[0].refName
+    info = info.filter(info => info.unique!.base === baseTypeRef)
   }
   item.infoVariants = info
   // choose 1st variant, correct one will be picked at the end of parsing
@@ -219,8 +222,7 @@ function findInDatabase (item: ParserState) {
 }
 
 function parseMapTier (item: ParserState) {
-  // TODO blocked by https://www.pathofexile.com/forum/view-thread/3915458
-  const execResult = _$REF.MAP_TIER.exec(item.baseType || item.name)
+  const execResult = _$.MAP_TIER.exec(item.baseType || item.name)
   if (!execResult) return
 
   item.map = {
@@ -681,9 +683,9 @@ function parseLogbookArea (section: string[], item: ParsedItem) {
   if (item.info.refName !== 'Expedition Logbook') return 'PARSER_SKIPPED'
   if (section.length < 3) return 'SECTION_SKIPPED'
 
-  // skip Area, parse Faction
+  // skip Logbook Area line, parse Faction
   const faction = STAT_BY_MATCH_STR(section[1])
-  if (!faction) return 'SECTION_SKIPPED'
+  if (!faction || !faction.stat.ref.startsWith('Has Logbook Faction:')) return 'SECTION_SKIPPED'
 
   const areaMods: ParsedModifier[] = [{
     info: { tags: [], type: ModifierType.Pseudo },
@@ -827,9 +829,9 @@ function parseSynthesised (section: string[], item: ParserState) {
     if (section[0] === _$.SECTION_SYNTHESISED) {
       item.isSynthesised = true
       if (item.baseType) {
-        item.baseType = _$REF.ITEM_SYNTHESISED.exec(item.baseType)![1]
+        item.baseType = _$.ITEM_SYNTHESISED.exec(item.baseType)![1]
       } else {
-        item.name = _$REF.ITEM_SYNTHESISED.exec(item.name)![1]
+        item.name = _$.ITEM_SYNTHESISED.exec(item.name)![1]
       }
       return 'SECTION_PARSED'
     }
@@ -845,8 +847,8 @@ function parseSuperior (item: ParserState) {
     (item.rarity === ItemRarity.Rare && item.isUnidentified) ||
     (item.rarity === ItemRarity.Unique && item.isUnidentified)
   ) {
-    if (_$REF.ITEM_SUPERIOR.test(item.name)) {
-      item.name = _$REF.ITEM_SUPERIOR.exec(item.name)![1]
+    if (_$.ITEM_SUPERIOR.test(item.name)) {
+      item.name = _$.ITEM_SUPERIOR.exec(item.name)![1]
     }
   }
 }
@@ -854,8 +856,8 @@ function parseSuperior (item: ParserState) {
 function parseFoulborn (item: ParserState) {
   if (item.rarity !== ItemRarity.Unique || item.isUnidentified) return
 
-  if (_$REF.FOULBORN_NAME.test(item.name)) {
-    item.name = _$REF.FOULBORN_NAME.exec(item.name)![1]
+  if (_$.FOULBORN_NAME.test(item.name)) {
+    item.name = _$.FOULBORN_NAME.exec(item.name)![1]
     item.isFoulborn = true
   }
 }
@@ -875,6 +877,63 @@ function parseCategoryByHelpText (section: string[], item: ParsedItem) {
   return 'SECTION_SKIPPED'
 }
 
+function parseHeistContract (section: string[], item: ParsedItem) {
+  if (item.category !== ItemCategory.HeistContract) return 'PARSER_SKIPPED'
+
+  parseAreaLevelNested(section, item)
+  if (!item.areaLevel) {
+    return 'SECTION_SKIPPED'
+  }
+
+  item.heistContract = {}
+
+  for (const line of section) {
+    const jobMatch = line.match(_$.HEIST_CONTRACT_JOB)
+    if (jobMatch) {
+      switch (jobMatch.groups!.job) {
+        case _$.HEIST_JOB_LOCKPICKING:
+          item.heistContract.requiredJob = 'Lockpicking'; break
+        case _$.HEIST_JOB_BRUTEFORCE:
+          item.heistContract.requiredJob = 'Brute Force'; break
+        case _$.HEIST_JOB_PERCEPTION:
+          item.heistContract.requiredJob = 'Perception'; break
+        case _$.HEIST_JOB_DEMOLITION:
+          item.heistContract.requiredJob = 'Demolition'; break
+        case _$.HEIST_JOB_COUNTERTHAUMATURGY:
+          item.heistContract.requiredJob = 'Counter-Thaumaturgy'; break
+        case _$.HEIST_JOB_TRAPDISARMAMENT:
+          item.heistContract.requiredJob = 'Trap Disarmament'; break
+        case _$.HEIST_JOB_AGILITY:
+          item.heistContract.requiredJob = 'Agility'; break
+        case _$.HEIST_JOB_DECEPTION:
+          item.heistContract.requiredJob = 'Deception'; break
+        case _$.HEIST_JOB_ENGINEERING:
+          item.heistContract.requiredJob = 'Engineering'; break
+      }
+      item.heistContract.jobLevel = Number(jobMatch.groups!.level)
+      continue
+    }
+
+    const targetMatch = line.match(_$.HEIST_CONTRACT_TARGET)
+    if (targetMatch) {
+      if (targetMatch[1] === _$.HEIST_TARGET_PRICELESS) {
+        item.heistContract.targetValue = 'Priceless'
+      }
+      continue
+    }
+
+    if (line.startsWith(_$.HEIST_ITEM_QUANTITY)) {
+      const m = line.slice(_$.HEIST_ITEM_QUANTITY.length).match(/\+?(\d+)%/)
+      if (m) item.heistContract.itemQuantity = parseInt(m[1], 10)
+    } else if (line.startsWith(_$.HEIST_ITEM_RARITY)) {
+      const m = line.slice(_$.HEIST_ITEM_RARITY.length).match(/\+?(\d+)%/)
+      if (m) item.heistContract.itemRarity = parseInt(m[1], 10)
+    }
+  }
+
+  return 'SECTION_PARSED'
+}
+
 function parseHeistBlueprint (section: string[], item: ParsedItem) {
   if (item.category !== ItemCategory.HeistBlueprint) return 'PARSER_SKIPPED'
 
@@ -883,84 +942,43 @@ function parseHeistBlueprint (section: string[], item: ParsedItem) {
     return 'SECTION_SKIPPED'
   }
 
-  item.heist = {}
+  item.heistBlueprint = {}
 
   for (const line of section) {
-    if (line.startsWith(_$.HEIST_TARGET)) {
-      const targetText = line.slice(_$.HEIST_TARGET.length)
+    if (line.startsWith(_$.HEIST_BLUEPRINT_TARGET)) {
+      const targetText = line.slice(_$.HEIST_BLUEPRINT_TARGET.length)
       switch (targetText) {
         case _$.HEIST_BLUEPRINT_ENCHANTS:
-          item.heist.target = 'Enchants'; break
+          item.heistBlueprint.target = 'Enchants'; break
         case _$.HEIST_BLUEPRINT_GEMS:
-          item.heist.target = 'Gems'; break
+          item.heistBlueprint.target = 'Gems'; break
         case _$.HEIST_BLUEPRINT_REPLICAS:
-          item.heist.target = 'Replicas'; break
+          item.heistBlueprint.target = 'Replicas'; break
         case _$.HEIST_BLUEPRINT_TRINKETS:
-          item.heist.target = 'Trinkets'; break
+          item.heistBlueprint.target = 'Trinkets'; break
       }
     } else if (line.startsWith(_$.HEIST_WINGS_REVEALED)) {
-      const text = line.slice(_$.HEIST_WINGS_REVEALED.length)
-      const parts = text.split('/')
-      item.heist.wingsRevealed = parseInt(parts[0], 10)
-      if (parts[1]) item.heist.totalWings = parseInt(parts[1], 10)
+      const parts = line.slice(_$.HEIST_WINGS_REVEALED.length).split('/')
+      item.heistBlueprint.wingsRevealed = parseInt(parts[0], 10)
+      if (parts[1]) item.heistBlueprint.totalWings = parseInt(parts[1], 10)
     } else if (line.startsWith(_$.HEIST_ESCAPE_ROUTES)) {
-      const text = line.slice(_$.HEIST_ESCAPE_ROUTES.length)
-      const parts = text.split('/')
-      item.heist.escapeRoutes = parseInt(parts[0], 10)
-      if (parts[1]) item.heist.totalEscapeRoutes = parseInt(parts[1], 10)
+      const parts = line.slice(_$.HEIST_ESCAPE_ROUTES.length).split('/')
+      item.heistBlueprint.escapeRoutes = parseInt(parts[0], 10)
+      if (parts[1]) item.heistBlueprint.totalEscapeRoutes = parseInt(parts[1], 10)
     } else if (line.startsWith(_$.HEIST_REWARD_ROOMS)) {
-      const text = line.slice(_$.HEIST_REWARD_ROOMS.length)
-      const parts = text.split('/')
-      item.heist.rewardRooms = parseInt(parts[0], 10)
-      if (parts[1]) item.heist.totalRewardRooms = parseInt(parts[1], 10)
+      const parts = line.slice(_$.HEIST_REWARD_ROOMS.length).split('/')
+      item.heistBlueprint.rewardRooms = parseInt(parts[0], 10)
+      if (parts[1]) item.heistBlueprint.totalRewardRooms = parseInt(parts[1], 10)
     } else if (line.startsWith(_$.HEIST_ITEM_QUANTITY)) {
       const m = line.slice(_$.HEIST_ITEM_QUANTITY.length).match(/\+?(\d+)%/)
-      if (m) item.heist.itemQuantity = parseInt(m[1], 10)
+      if (m) item.heistBlueprint.itemQuantity = parseInt(m[1], 10)
     } else if (line.startsWith(_$.HEIST_ITEM_RARITY)) {
       const m = line.slice(_$.HEIST_ITEM_RARITY.length).match(/\+?(\d+)%/)
-      if (m) item.heist.itemRarity = parseInt(m[1], 10)
+      if (m) item.heistBlueprint.itemRarity = parseInt(m[1], 10)
     }
   }
 
   return 'SECTION_PARSED'
-}
-
-const HEIST_DEPARTMENTS = new Set<string>(Object.values(HeistDepartment))
-
-function parseHeistContract (section: string[], item: ParsedItem) {
-  if (item.category !== ItemCategory.HeistContract) return 'PARSER_SKIPPED'
-
-  parseAreaLevelNested(section, item)
-  if (!item.areaLevel) return 'SECTION_SKIPPED'
-
-  for (const line of section) {
-    if (line.startsWith(_$.HEIST_CONTRACT_REQUIRED)) {
-      const m = _$.HEIST_CONTRACT_REQUIRED_DEPARTMENT_LEVEL.exec(line)
-      if (m) {
-        const deptName = _$.HEIST_DEPARTMENT_MAP[m[1]] ?? m[1]
-        if (HEIST_DEPARTMENTS.has(deptName)) {
-          item.heistContract = {
-            department: deptName as HeistDepartment,
-            minLevel: Number(m[2])
-          }
-        }
-      }
-    } else if (line.startsWith(_$.HEIST_ITEM_QUANTITY)) {
-      const m = line.slice(_$.HEIST_ITEM_QUANTITY.length).match(/\+?(\d+)%/)
-      if (m) {
-        if (!item.heist) item.heist = {}
-        item.heist.itemQuantity = parseInt(m[1], 10)
-      }
-    } else if (line.startsWith(_$.HEIST_ITEM_RARITY)) {
-      const m = line.slice(_$.HEIST_ITEM_RARITY.length).match(/\+?(\d+)%/)
-      if (m) {
-        if (!item.heist) item.heist = {}
-        item.heist.itemRarity = parseInt(m[1], 10)
-      }
-    }
-  }
-
-  return (item.heistContract) ? 'SECTION_PARSED' : 'SECTION_SKIPPED'
 }
 
 function parseAreaLevelNested (section: string[], item: ParsedItem) {

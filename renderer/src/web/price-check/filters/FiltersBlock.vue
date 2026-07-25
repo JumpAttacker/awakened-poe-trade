@@ -58,10 +58,6 @@
         :filter="filters.heistItemQuantity" :name="t('item.heist_iiq')" />
       <filter-btn-numeric v-if="filters.heistItemRarity"
         :filter="filters.heistItemRarity" :name="t('item.heist_iir')" />
-      <filter-btn-logical v-if="filters.heistContractDepartment"
-        :filter="filters.heistContractDepartment" :text="filters.heistContractDepartment.value" />
-      <filter-btn-numeric v-if="filters.heistContractMinLevel"
-        :filter="filters.heistContractMinLevel" :name="t('item.heist_contract_required_level')" />
       <filter-btn-numeric v-if="filters.sentinelCharge"
         :filter="filters.sentinelCharge" :name="t('item.sentinel_charge')" />
       <filter-btn-logical v-if="filters.mapBlighted" readonly

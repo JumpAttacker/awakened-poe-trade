@@ -10,18 +10,6 @@ export enum ItemRarity {
   Unique = 'Unique'
 }
 
-export enum HeistDepartment {
-  Agility = 'Agility',
-  BruteForce = 'Brute Force',
-  CounterThaumaturgy = 'Counter-Thaumaturgy',
-  Deception = 'Deception',
-  Demolition = 'Demolition',
-  Engineering = 'Engineering',
-  Lockpicking = 'Lockpicking',
-  Perception = 'Perception',
-  TrapDisarmament = 'Trap Disarmament'
-}
-
 export enum ItemInfluence {
   Crusader = 'Crusader',
   Elder = 'Elder',
@@ -93,7 +81,7 @@ export interface ParsedItem {
     sacrificeAmount: number
   }
   ultimatumModDescriptions?: Record<string, string>
-  heist?: {
+  heistBlueprint?: {
     wingsRevealed?: number
     totalWings?: number
     escapeRoutes?: number
@@ -105,8 +93,11 @@ export interface ParsedItem {
     itemRarity?: number
   }
   heistContract?: {
-    department: HeistDepartment
-    minLevel: number
+    requiredJob?: 'Lockpicking' | 'Brute Force' | 'Perception' | 'Demolition' | 'Counter-Thaumaturgy' | 'Trap Disarmament' | 'Agility' | 'Deception' | 'Engineering'
+    jobLevel?: number
+    targetValue?: 'Priceless'
+    itemQuantity?: number
+    itemRarity?: number
   }
   category?: ItemCategory
   info: BaseType

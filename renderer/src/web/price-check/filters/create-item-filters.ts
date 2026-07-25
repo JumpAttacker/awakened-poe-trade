@@ -182,36 +182,6 @@ export function createFilters (
       value: floorToBracket(item.areaLevel!, [1, 68, 73, 78, 81, 83]),
       disabled: false
     }
-  } else if (item.category === ItemCategory.HeistContract && item.heistContract) {
-    filters.searchExact = {
-      baseType: item.info.name,
-      baseTypeTrade: t(opts, item.info)
-    }
-    if (item.rarity === ItemRarity.Unique && item.info.unique) {
-      filters.searchExact = {
-        name: item.info.name,
-        nameTrade: t(opts, item.info),
-        baseTypeTrade: t(opts, ITEM_BY_REF('ITEM', item.info.unique.base)![0])
-      }
-    }
-    filters.areaLevel = {
-      value: item.areaLevel!,
-      disabled: false
-    }
-    filters.heistContractDepartment = {
-      value: item.heistContract.department,
-      disabled: false
-    }
-    filters.heistContractMinLevel = {
-      value: item.heistContract.minLevel,
-      disabled: false
-    }
-    if (item.heist?.itemQuantity != null) {
-      filters.heistItemQuantity = { value: item.heist.itemQuantity, disabled: true }
-    }
-    if (item.heist?.itemRarity != null) {
-      filters.heistItemRarity = { value: item.heist.itemRarity, disabled: true }
-    }
   } else if (item.category === ItemCategory.HeistBlueprint) {
     filters.searchRelaxed = {
       category: item.category,
@@ -222,29 +192,29 @@ export function createFilters (
       baseTypeTrade: t(opts, item.info)
     }
     filters.areaLevel = { value: item.areaLevel!, disabled: false }
-    if (item.heist?.wingsRevealed) {
-      filters.heistWingsRevealed = { value: item.heist.wingsRevealed, disabled: false }
+    if (item.heistBlueprint?.wingsRevealed) {
+      filters.heistWingsRevealed = { value: item.heistBlueprint.wingsRevealed, disabled: false }
     }
-    if (item.heist?.totalWings != null) {
-      filters.heistTotalWings = { value: item.heist.totalWings, disabled: true }
+    if (item.heistBlueprint?.totalWings != null) {
+      filters.heistTotalWings = { value: item.heistBlueprint.totalWings, disabled: true }
     }
-    if (item.heist?.escapeRoutes != null) {
-      filters.heistEscapeRoutes = { value: item.heist.escapeRoutes, disabled: true }
+    if (item.heistBlueprint?.escapeRoutes != null) {
+      filters.heistEscapeRoutes = { value: item.heistBlueprint.escapeRoutes, disabled: true }
     }
-    if (item.heist?.totalEscapeRoutes != null) {
-      filters.heistTotalEscapeRoutes = { value: item.heist.totalEscapeRoutes, disabled: true }
+    if (item.heistBlueprint?.totalEscapeRoutes != null) {
+      filters.heistTotalEscapeRoutes = { value: item.heistBlueprint.totalEscapeRoutes, disabled: true }
     }
-    if (item.heist?.rewardRooms != null) {
-      filters.heistRewardRooms = { value: item.heist.rewardRooms, disabled: true }
+    if (item.heistBlueprint?.rewardRooms != null) {
+      filters.heistRewardRooms = { value: item.heistBlueprint.rewardRooms, disabled: true }
     }
-    if (item.heist?.totalRewardRooms != null) {
-      filters.heistTotalRewardRooms = { value: item.heist.totalRewardRooms, disabled: true }
+    if (item.heistBlueprint?.totalRewardRooms != null) {
+      filters.heistTotalRewardRooms = { value: item.heistBlueprint.totalRewardRooms, disabled: true }
     }
-    if (item.heist?.itemQuantity != null) {
-      filters.heistItemQuantity = { value: item.heist.itemQuantity, disabled: true }
+    if (item.heistBlueprint?.itemQuantity != null) {
+      filters.heistItemQuantity = { value: item.heistBlueprint.itemQuantity, disabled: true }
     }
-    if (item.heist?.itemRarity != null) {
-      filters.heistItemRarity = { value: item.heist.itemRarity, disabled: true }
+    if (item.heistBlueprint?.itemRarity != null) {
+      filters.heistItemRarity = { value: item.heistBlueprint.itemRarity, disabled: true }
     }
   } else if (item.rarity === ItemRarity.Unique && item.info.unique) {
     filters.searchExact = {
@@ -267,7 +237,8 @@ export function createFilters (
         disabled = true
       } else if (
         item.category === ItemCategory.SanctumRelic ||
-        item.category === ItemCategory.Charm
+        item.category === ItemCategory.Charm ||
+        item.category === ItemCategory.HeistContract
       ) {
         disabled = false
       }
@@ -300,13 +271,6 @@ export function createFilters (
   if (item.sockets?.linked) {
     filters.linkedSockets = {
       value: item.sockets.linked,
-      disabled: false
-    }
-  }
-
-  if (item.sockets?.white) {
-    filters.whiteSockets = {
-      value: item.sockets.white,
       disabled: false
     }
   }
@@ -467,6 +431,21 @@ export function createFilters (
   if (item.rarity === ItemRarity.Unique) {
     filters.foulborn = {
       value: Boolean(item.isFoulborn)
+    }
+  }
+
+  if (item.category === ItemCategory.HeistContract) {
+    if (item.rarity !== ItemRarity.Unique) {
+      filters.areaLevel = {
+        value: item.areaLevel!,
+        disabled: false
+      }
+    }
+    if (item.heistContract?.itemQuantity != null) {
+      filters.heistItemQuantity = { value: item.heistContract.itemQuantity, disabled: true }
+    }
+    if (item.heistContract?.itemRarity != null) {
+      filters.heistItemRarity = { value: item.heistContract.itemRarity, disabled: true }
     }
   }
 

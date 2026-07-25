@@ -116,7 +116,7 @@ export const usePoeninja = createGlobalState(() => {
     const nameStr = `"name":${JSON.stringify(name)},`
     let fallback: (NinjaDenseInfo & { url: string }) | null = null
 
-    for (const { ns, url, lines } of PRICES_DB.value) {
+    for (const { url, lines } of PRICES_DB.value) {
       let searchFrom = 0
       while (true) {
         const namePos = lines.indexOf(nameStr, searchFrom)
